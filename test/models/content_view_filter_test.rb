@@ -6,7 +6,7 @@ module Katello
       User.current = User.find(users(:admin).id)
       @repo = Repository.find(katello_repositories(:fedora_17_x86_64).id)
       @view = create(:katello_content_view, :organization => @repo.product.organization)
-      @filter = create(:katello_content_view_filter, :content_view => @view)
+      @filter = create(:katello_content_view_filter, :content_view => @view, :content_type => "rpm")
       ContentView.any_instance.stubs(:reindex_on_association_change).returns(true)
     end
 
@@ -48,6 +48,24 @@ module Katello
 
     def test_search_type
       assert_equal ContentViewPackageFilter, ContentViewFilter.search_for("content_type = rpm").first.class
+    end
+
+    def test_create_and_search_type_erratum
+      attrs = FactoryBot.attributes_for(:katello_content_view_filter,
+                                         :name => @filter.name,
+                                         :content_type => "erratum",
+                                         :content_view_id => @filter.content_view_id)
+      ContentViewFilter.create(attrs)
+      assert_equal ContentViewErratumFilter, ContentViewFilter.search_for("content_type = erratum").first.class
+    end
+
+    def test_create_and_search_type_pkg_group
+      attrs = FactoryBot.attributes_for(:katello_content_view_filter,
+                                         :name => @filter.name,
+                                         :content_type => "pkg_group",
+                                         :content_view_id => @filter.content_view_id)
+      ContentViewFilter.create(attrs)
+      assert_equal ContentViewPackageGroupFilter, ContentViewFilter.search_for("content_type = pkg_group").first.class
     end
 
     def test_search_inclusion
